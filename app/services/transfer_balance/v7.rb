@@ -8,14 +8,14 @@ module TransferBalance
   # can be very slow
   module V7
     class << self
-      def call(from, to, amount)
+      def call(from, to, amount, skip_sleep = false)
         ActiveRecord::Base.transaction do
           from.lock!
           to.lock!
 
           # emulate some heavy-lifting stuff
           # giving a chance for standalone #withdraw / #deposit finish first
-          sleep(0.05)
+          sleep(0.05) unless skip_sleep
 
           withdraw(from, amount)
           deposit(to, amount)
