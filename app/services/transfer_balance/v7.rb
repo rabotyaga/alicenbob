@@ -4,8 +4,8 @@ module TransferBalance
   # transaction w/ locks everywhere
   # no lost updates
   # guarantees same order
-  # fails on deadlock
-  module V5
+  # avoids deadlock by rescue w/ retry
+  module V7
     class << self
       def call(from, to, amount)
         ActiveRecord::Base.transaction do
@@ -23,6 +23,8 @@ module TransferBalance
           withdraw(from, amount)
           deposit(to, amount)
         end
+      rescue ActiveRecord::Deadlocked
+        retry
       end
 
       def withdraw(from, amount)

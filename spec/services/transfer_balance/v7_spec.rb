@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe TransferBalance::V5 do
+describe TransferBalance::V7 do
   let(:alice) { Account.create(name: 'Alice', balance: 100) }
   let(:bob) { Account.create(name: 'Bob', balance: 100) }
 

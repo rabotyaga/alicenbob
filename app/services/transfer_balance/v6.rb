@@ -4,17 +4,18 @@ module TransferBalance
   # transaction w/ locks everywhere
   # no lost updates
   # guarantees same order
-  # fails on deadlock
-  module V5
+  # avoids deadlock by lock ordering
+  module V6
     class << self
       def call(from, to, amount)
         ActiveRecord::Base.transaction do
-          from.lock!
+          accounts = [from, to].sort_by(&:id)
+          accounts.first.lock!
 
           # give a chance for a deadlock
           sleep(0.01)
 
-          to.lock!
+          accounts.last.lock!
 
           # emulate some heavy-lifting stuff
           # giving a chance for standalone #withdraw / #deposit finish first

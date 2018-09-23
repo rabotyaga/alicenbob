@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe TransferBalance::V5 do
+describe TransferBalance::V6 do
   let(:alice) { Account.create(name: 'Alice', balance: 100) }
   let(:bob) { Account.create(name: 'Bob', balance: 100) }
 
@@ -45,7 +45,9 @@ describe TransferBalance::V5 do
               described_class.call(bob, alice, 100)
             else
               # allow first transfer to start first
-              sleep(0.01)
+              # increased sleep time to not accidentally withdraw Bob's account
+              # before transfer to Alice actually starts
+              sleep(0.06)
               described_class.withdraw(bob, 100)
             end
           rescue ActiveRecord::RecordInvalid
