@@ -1,0 +1,2 @@
+class OptLockAccount < ApplicationRecord
+end
