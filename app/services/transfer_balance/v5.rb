@@ -10,10 +10,6 @@ module TransferBalance
       def call(from, to, amount)
         ActiveRecord::Base.transaction do
           from.lock!
-
-          # give a chance for a deadlock
-          sleep(0.01)
-
           to.lock!
 
           # emulate some heavy-lifting stuff

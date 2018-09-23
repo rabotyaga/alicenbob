@@ -5,15 +5,12 @@ module TransferBalance
   # no lost updates
   # guarantees same order
   # avoids deadlock by rescue w/ retry
+  # can be very slow
   module V7
     class << self
       def call(from, to, amount)
         ActiveRecord::Base.transaction do
           from.lock!
-
-          # give a chance for a deadlock
-          sleep(0.01)
-
           to.lock!
 
           # emulate some heavy-lifting stuff

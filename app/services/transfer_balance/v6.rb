@@ -11,10 +11,6 @@ module TransferBalance
         ActiveRecord::Base.transaction do
           accounts = [from, to].sort_by(&:id)
           accounts.first.lock!
-
-          # give a chance for a deadlock
-          sleep(0.01)
-
           accounts.last.lock!
 
           # emulate some heavy-lifting stuff
