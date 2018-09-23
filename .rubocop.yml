@@ -1,8 +1,5 @@
 require: rubocop-rspec
 
-RSpec/MultipleExpectations:
-  Max: 4
-
 AllCops:
   Exclude:
     - bin/*
@@ -28,7 +25,11 @@ RSpec/ExampleLength:
   Max: 25
 
 Metrics/BlockLength:
-  Max: 100
+  Max: 50
 
 Metrics/LineLength:
   Max: 120
+
+RSpec/ContextWording:
+  Exclude:
+    - spec/support/shared_contexts/*
