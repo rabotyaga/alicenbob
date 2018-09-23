@@ -12,4 +12,8 @@ describe TransferBalance::V4 do
   context 'with conflicting parallel operations' do
     include_context 'conflicting parallel operations'
   end
+
+  context 'with conflicting parallel operations' do
+    include_context 'conflicting parallel operations, order matters'
+  end
 end

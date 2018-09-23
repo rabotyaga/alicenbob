@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-shared_context 'invalid transfer with exception' do
-  let(:alice) { Account.create(name: 'Alice', balance: 100) }
-  let(:bob) { Account.create(name: 'Bob', balance: 100) }
+shared_context 'invalid transfer with exception' do |account_class = Account|
+  let(:alice) { account_class.create(name: 'Alice', balance: 100) }
+  let(:bob) { account_class.create(name: 'Bob', balance: 100) }
 
   it 'raises validation error, both balances stay unchanged' do
     aggregate_failures do

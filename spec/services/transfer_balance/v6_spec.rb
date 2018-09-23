@@ -13,6 +13,10 @@ describe TransferBalance::V6 do
     include_context 'conflicting parallel operations'
   end
 
+  context 'with conflicting parallel operations' do
+    include_context 'conflicting parallel operations, order matters'
+  end
+
   context 'with non conflicting parallel operations' do
     include_context 'handles deadlocks'
   end
