@@ -3,33 +3,34 @@
 module TransferBalance
   # transaction w/ optimistic locks
   # no lost updates
-  # retries on ActiveRecord::StaleObjectError
+  # retries on ActiveRecord::StaleObjectError & deadlocks
   # does not guarantee same order
-  # can (and will!) raise ActiveRecord::Deadlocked
   module OptLockV1
     class << self
-      def call(from, to, amount)
+      def call(from, to, amount, skip_sleep = false)
         ActiveRecord::Base.transaction do
           # emulate some heavy-lifting stuff
           # giving a chance for standalone #withdraw / #deposit finish first
-          sleep(0.05)
+          sleep(0.05) unless skip_sleep
 
           withdraw(from, amount)
           deposit(to, amount)
         end
-      rescue ActiveRecord::StaleObjectError
+      rescue ActiveRecord::Deadlocked, ActiveRecord::StaleObjectError
         retry
       end
 
       def withdraw(from, amount)
         from.update!(balance: from.balance - amount)
       rescue ActiveRecord::StaleObjectError
+        from.reload
         retry
       end
 
       def deposit(to, amount)
         to.update!(balance: to.balance + amount)
       rescue ActiveRecord::StaleObjectError
+        to.reload
         retry
       end
     end
