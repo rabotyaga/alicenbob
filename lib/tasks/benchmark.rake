@@ -4,79 +4,17 @@ require 'benchmark/ips'
 
 desc 'Run benchmarks'
 task benchmark: :environment do
-  Account.find_or_create_by(name: 'Alice').update(balance: 1000)
-  Account.find_or_create_by(name: 'Bob').update(balance: 1000)
-  OptLockAccount.find_or_create_by(name: 'Alice').update(balance: 1_000_000)
-  OptLockAccount.find_or_create_by(name: 'Bob').update(balance: 1_000_000)
+  create_accounts
 
-  puts '=' * 80
-  puts 'Alice & Bob (very high probability of lock waiting & deadlocks)'
+  header('Alice & Bob (very high probability of lock waiting & deadlocks)')
+  benchmark(:alice_n_bob)
 
-  Benchmark.ips do |x|
-    x.config(warmup: 0, time: 15)
-
-    x.report('v6 (lock ordering)') do
-      run(TransferBalance::V6)
-    end
-
-    x.report('v7 (rescue ActiveRecord::Deadlocked & retry)') do
-      run(TransferBalance::V7)
-    end
-
-    x.report('v8 (repeatable read isolation level)') do
-      run(TransferBalance::V8)
-    end
-
-    x.report('v9 (serializable isolation level)') do
-      run(TransferBalance::V9)
-    end
-
-    x.report('opt_lock_v1 (optimistic locks & retry on deadlocks)') do
-      run(TransferBalance::OptLockV1, OptLockAccount)
-    end
-
-    x.compare!
-  end
-
-  1000.times do |i|
-    Account.find_or_create_by(name: "acc#{i}").update(balance: 1_000_000)
-    OptLockAccount.find_or_create_by(name: "acc#{i}").update(balance: 1_000_000)
-  end
-
-  puts '=' * 80
-  puts 'Random accounts (very low probability of lock waiting & deadlocks)'
-
-  Benchmark.ips do |x|
-    x.config(warmup: 0, time: 15)
-
-    x.report('v6 (lock ordering)') do
-      run2(TransferBalance::V6)
-    end
-
-    x.report('v7 (rescue ActiveRecord::Deadlocked & retry)') do
-      run2(TransferBalance::V7)
-    end
-
-    x.report('v8 (repeatable read isolation level)') do
-      run2(TransferBalance::V8)
-    end
-
-    x.report('v9 (serializable isolation level)') do
-      run2(TransferBalance::V9)
-    end
-
-    x.report('opt_lock_v1 (optimistic locks & retry on deadlocks)') do
-      run2(TransferBalance::OptLockV1, OptLockAccount)
-    end
-
-    x.compare!
-  end
+  header('Random accounts (very low probability of lock waiting & deadlocks)')
+  benchmark(:random_accounts)
 end
 
 # rubocop:disable Metrics/MethodLength
-def run(transfer_class, account_class = Account)
-  available_db_connections = ActiveRecord::Base.connection.pool.size - 1
-
+def alice_n_bob(transfer_class, account_class = Account)
   threads = Array.new(available_db_connections) do |i|
     Thread.new do
       alice = account_class.find_by!(name: 'Alice')
@@ -93,9 +31,7 @@ def run(transfer_class, account_class = Account)
 end
 # rubocop:enable Metrics/MethodLength
 
-def run2(transfer_class, account_class = Account)
-  available_db_connections = ActiveRecord::Base.connection.pool.size - 1
-
+def random_accounts(transfer_class, account_class = Account)
   threads = Array.new(available_db_connections) do
     Thread.new do
       acc1 = account_class.find_by!(name: "acc#{rand(1000)}")
@@ -106,3 +42,56 @@ def run2(transfer_class, account_class = Account)
 
   threads.each(&:join)
 end
+
+def available_db_connections
+  ActiveRecord::Base.connection.pool.size - 1
+end
+
+def header(title)
+  puts '=' * 80
+  puts title
+  puts "using #{available_db_connections} threads"
+  puts '=' * 80
+end
+
+def create_accounts
+  Account.find_or_create_by(name: 'Alice').update(balance: 1_000_000_000)
+  Account.find_or_create_by(name: 'Bob').update(balance: 1_000_000_000)
+  OptLockAccount.find_or_create_by(name: 'Alice').update(balance: 1_000_000_000)
+  OptLockAccount.find_or_create_by(name: 'Bob').update(balance: 1_000_000_000)
+
+  1000.times do |i|
+    Account.find_or_create_by(name: "acc#{i}").update(balance: 1_000_000_000)
+    OptLockAccount.find_or_create_by(name: "acc#{i}").update(balance: 1_000_000_000)
+  end
+end
+
+# rubocop:disable Metrics/MethodLength
+def benchmark(method)
+  Benchmark.ips do |x|
+    x.config(warmup: 0, time: 15)
+
+    x.report('v6 (lock ordering)') do
+      send(method, TransferBalance::V6)
+    end
+
+    x.report('v7 (retry on deadlock)') do
+      send(method, TransferBalance::V7)
+    end
+
+    x.report('v8 (repeatable read)') do
+      send(method, TransferBalance::V8)
+    end
+
+    x.report('v9 (serializable)') do
+      send(method, TransferBalance::V9)
+    end
+
+    x.report('opt_lock_v1 (retry on deadlock)') do
+      send(method, TransferBalance::OptLockV1, OptLockAccount)
+    end
+
+    x.compare!
+  end
+end
+# rubocop:enable Metrics/MethodLength
