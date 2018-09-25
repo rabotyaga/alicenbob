@@ -9,7 +9,7 @@ shared_context 'conflicting parallel operations, order matters' do |account_clas
     bob # create Bob
   end
 
-  it 'fails all but first one' do
+  it 'preserves order' do
     aggregate_failures do
       expect(ActiveRecord::Base.connection.pool.size).to be > 4
       available_db_connections = ActiveRecord::Base.connection.pool.size - 1

@@ -1,23 +1,5 @@
 # frozen_string_literal: true
 
 describe TransferBalance::V7 do
-  context 'with valid transfer' do
-    include_context 'valid transfer'
-  end
-
-  context 'with invalid transfer' do
-    include_context 'invalid transfer with exception'
-  end
-
-  context 'with conflicting parallel operations' do
-    include_context 'conflicting parallel operations'
-  end
-
-  context 'with conflicting parallel operations' do
-    include_context 'conflicting parallel operations, order matters'
-  end
-
-  context 'with non conflicting parallel operations' do
-    include_context 'handles deadlocks'
-  end
+  it_behaves_like 'fully operational'
 end
