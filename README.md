@@ -1,6 +1,6 @@
 # Alice and Bob transfers money
 
-## Illustrating repository for the presentation
+## Illustrating repository for the [presentation](https://slides.com/ivanrabotyga/alicenbob)
 
 Setup:
 ```sh
